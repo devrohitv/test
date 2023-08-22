@@ -1,28 +1,54 @@
-name: Build Kivy APK
-
+name: Build
 on:
   push:
-    branches:
-      - main  # Adjust the branch name as needed
+    branches-ignore:
+      - data
+      - gh-pages
+    tags:
+      - '**'
+  pull_request:
+    branches-ignore:
+      - data
+      - gh-pages
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  # Build job. Builds app for Android with Buildozer
+  build-android:
+    name: Build for Android
+    runs-on: ubuntu-20.04
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v2
+        with:
+          path: master
+               
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          repository_root: master
+          workdir: .
+          buildozer_version: stable
 
-      - name: Set Up Python
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: data
+          ref: data # Branch name
+          
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7  # Adjust the Python version as needed
+          python-version: 3.7
+          architecture: x64
 
-      - name: Install Dependencies
-        run: |
-          pip install buildozer
-          # Install other dependencies if needed
-
-      - name: Build APK
-        run: |
-          buildozer android debug  # Adjust the Buildozer command as needed
+      - name: Push binary to data branch
+        if: github.event_name == 'push'
+        run: python master/.ci/move_binary.py "${{ steps.buildozer.outputs.filename }}" master data bin
