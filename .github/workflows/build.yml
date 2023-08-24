@@ -15,20 +15,20 @@ jobs:
   # Build job. Builds app for Android with Buildozer
   build-android:
     name: Build for Android
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           path: master
-               
+
       - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
+        uses: ./master # REPLACE WITH ArtemSBulgakov/buildozer-action@v1
         id: buildozer
         with:
           repository_root: master
-          workdir: .
+          workdir: test_app
           buildozer_version: stable
 
       - name: Upload artifacts
@@ -42,7 +42,7 @@ jobs:
         with:
           path: data
           ref: data # Branch name
-          
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
